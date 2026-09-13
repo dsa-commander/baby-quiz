@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Baby Shower Trivia</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --navy: #1B2A4A;
+    --navy-deep: #121E38;
+    --cream: #F7F1E3;
+    --gold: #E0A93D;
+    --gold-dim: #B7872E;
+    --sage: #93A97E;
+    --coral: #D9705F;
+    --ink: #1B2A4A;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--navy-deep);
+    background-image:
+      radial-gradient(circle at 20% 15%, rgba(224,169,61,0.10) 0%, transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(147,169,126,0.10) 0%, transparent 45%);
+    font-family: 'Inter', sans-serif;
+    color: var(--cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 460px;
+    background: var(--cream);
+    color: var(--ink);
+    border-radius: 18px;
+    padding: 32px 26px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: repeating-linear-gradient(90deg, var(--gold) 0 18px, var(--sage) 18px 36px, var(--coral) 36px 54px);
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 30px;
+    line-height: 1.15;
+    margin: 10px 0 6px;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    color: #55618A;
+    margin-bottom: 26px;
+    line-height: 1.5;
+  }
+
+  input[type=text] {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 2px solid #DCD3BC;
+    font-size: 16px;
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 16px;
+    background: #FFFDF8;
+  }
+  input[type=text]:focus { outline: none; border-color: var(--gold-dim); }
+
+  button.primary {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    background: var(--navy);
+    color: var(--cream);
+    font-size: 16px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.15s ease;
+  }
+  button.primary:active { transform: scale(0.98); }
+  button.primary:disabled { opacity: 0.4; cursor: default; }
+
+  .progress-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #55618A;
+    margin-bottom: 18px;
+  }
+
+  .progress-bar {
+    height: 6px;
+    background: #E9E1CC;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--gold);
+    transition: width 0.25s ease;
+  }
+
+  .question {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 21px;
+    line-height: 1.35;
+    margin-bottom: 20px;
+  }
+
+  .options { display: flex; flex-direction: column; gap: 10px; }
+
+  .option {
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 2px solid #DCD3BC;
+    background: #FFFDF8;
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .option:active { transform: scale(0.99); }
+  .option.correct { border-color: var(--sage); background: #EAF0E3; }
+  .option.wrong { border-color: var(--coral); background: #F7E5E1; }
+  .option.disabled { pointer-events: none; }
+
+  .score-line {
+    text-align: center;
+    font-size: 14px;
+    color: #55618A;
+    margin-top: 16px;
+  }
+
+  .result-score {
+    font-family: 'Fraunces', serif;
+    font-size: 56px;
+    font-weight: 700;
+    text-align: center;
+    margin: 6px 0 4px;
+    color: var(--navy);
+  }
+  .result-label {
+    text-align: center;
+    color: #55618A;
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
+  .leaderboard {
+    margin-top: 22px;
+    border-top: 1px solid #E9E1CC;
+    padding-top: 18px;
+  }
+  .leaderboard h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    margin: 0 0 12px;
+  }
+  .lb-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 9px 0;
+    font-size: 14px;
+    border-bottom: 1px solid #F0EADA;
+  }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-name { font-weight: 600; }
+  .lb-score { color: var(--gold-dim); font-weight: 600; }
+  .lb-you { color: var(--sage); font-size: 12px; margin-left: 6px; }
+
+  .hidden { display: none; }
+
+  .loading-note { text-align: center; font-size: 13px; color: #55618A; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- SCREEN: Start -->
+  <div id="screen-start">
+    <h1>Baby Shower Trivia</h1>
+    <p class="subtitle">20 quick questions about pregnancy, newborns and baby facts. Enter your name and play on your own phone — everyone's score lands on the shared leaderboard below.</p>
+    <input type="text" id="name-input" placeholder="Your name" maxlength="24" autocomplete="off">
+    <button class="primary" id="start-btn">Start quiz</button>
+  </div>
+
+  <!-- SCREEN: Quiz -->
+  <div id="screen-quiz" class="hidden">
+    <div class="progress-row">
+      <span id="q-counter">Question 1 of 20</span>
+      <span id="q-score">Score: 0</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="question" id="q-text"></div>
+    <div class="options" id="q-options"></div>
+  </div>
+
+  <!-- SCREEN: Result -->
+  <div id="screen-result" class="hidden">
+    <h1 style="text-align:center;">Nice work!</h1>
+    <div class="result-score" id="final-score">0 / 20</div>
+    <div class="result-label" id="final-label"></div>
+    <button class="primary" id="retry-btn">Play again</button>
+  </div>
+
+</div>
+
+<script>
+const QUESTIONS = [
+  { q: "About how many bones does a newborn baby have, compared with an adult's 206?", options: ["Around 150", "Around 300", "Around 206, same as adults", "Around 450"], correct: 1 },
+  { q: "What's the average weight of a full-term newborn?", options: ["About 3 lbs (1.4 kg)", "About 5 lbs (2.3 kg)", "About 7.5 lbs (3.4 kg)", "About 11 lbs (5 kg)"], correct: 2 },
+  { q: "What is the soft spot on a baby's head called?", options: ["Fontanelle", "Cranium gap", "Sutura", "Ossicle"], correct: 0 },
+  { q: "How long does a typical human pregnancy last, counted from the last period?", options: ["32 weeks", "36 weeks", "40 weeks", "44 weeks"], correct: 2 },
+  { q: "What's the medical name for a newborn's first, tar-like stool?", options: ["Colostrum", "Meconium", "Lanugo", "Vernix"], correct: 1 },
+  { q: "Around what age do most babies start crawling?", options: ["1–2 months", "3–4 months", "6–10 months", "14–16 months"], correct: 2 },
+  { q: "How many teeth make up a full set of baby (milk) teeth?", options: ["16", "20", "24", "32"], correct: 1 },
+  { q: "Roughly how many hours a day does a newborn typically sleep?", options: ["8–9 hours", "12–13 hours", "16–17 hours", "20–22 hours"], correct: 2 },
+  { q: "What's the fine, downy hair sometimes found on a newborn's skin called?", options: ["Lanugo", "Vernix", "Fontanelle", "Follicle"], correct: 0 },
+  { q: "Around what age do most babies say their first word?", options: ["3–4 months", "6–7 months", "About 12 months", "About 24 months"], correct: 2 },
+  { q: "By around what age do most babies double their birth weight?", options: ["1 month", "5–6 months", "12 months", "18 months"], correct: 1 },
+  { q: "What term describes distress when a baby is separated from a parent, common from around 8 months?", options: ["Colic", "Separation anxiety", "Reflux", "Sensory overload"], correct: 1 },
+  { q: "What is the waxy coating that protects a newborn's skin in the womb called?", options: ["Vernix", "Lanugo", "Amniotic film", "Meconium"], correct: 0 },
+  { q: "About how far can a newborn baby focus their eyes?", options: ["Across a room", "8–12 inches (face distance)", "Only bright lights, no shapes", "Full adult vision range"], correct: 1 },
+  { q: "What's a common medical term for a baby born after 42 weeks of pregnancy?", options: ["Premature", "Post-term", "Low birth weight", "Breech"], correct: 1 },
+  { q: "Roughly how many diapers does a newborn go through per day?", options: ["2–3", "5–6", "8–10", "15–18"], correct: 2 },
+  { q: "What is the umbilical cord stump on a newborn's belly button usually gone by?", options: ["A few hours", "1–3 weeks", "6 months", "1 year"], correct: 1 },
+  { q: "What's a typical resting heart rate range for a healthy newborn?", options: ["40–60 bpm", "70–90 bpm", "120–160 bpm", "180–220 bpm"], correct: 2 },
+  { q: "What is the pregnancy craving-and-nausea period commonly called?", options: ["Baby blues", "Morning sickness", "Braxton Hicks", "Colostrum phase"], correct: 1 },
+  { q: "What are the mild, often painless practice contractions some call 'false labor'?", options: ["Braxton Hicks contractions", "Lanugo contractions", "Meconium contractions", "Transition contractions"], correct: 0 }
+];
+
+let currentQ = 0;
+let score = 0;
+let playerName = "";
+let answered = false;
+
+const screenStart = document.getElementById('screen-start');
+const screenQuiz = document.getElementById('screen-quiz');
+const screenResult = document.getElementById('screen-result');
+
+document.getElementById('start-btn').addEventListener('click', () => {
+  const val = document.getElementById('name-input').value.trim();
+  playerName = val || "Guest";
+  currentQ = 0;
+  score = 0;
+  screenStart.classList.add('hidden');
+  screenQuiz.classList.remove('hidden');
+  renderQuestion();
+});
+
+function renderQuestion() {
+  answered = false;
+  const total = QUESTIONS.length;
+  const item = QUESTIONS[currentQ];
+  document.getElementById('q-counter').textContent = `Question ${currentQ + 1} of ${total}`;
+  document.getElementById('q-score').textContent = `Score: ${score}`;
+  document.getElementById('progress-fill').style.width = `${(currentQ / total) * 100}%`;
+  document.getElementById('q-text').textContent = item.q;
+
+  const optionsEl = document.getElementById('q-options');
+  optionsEl.innerHTML = '';
+  item.options.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => selectAnswer(idx, btn));
+    optionsEl.appendChild(btn);
+  });
+}
+
+function selectAnswer(idx, btnEl) {
+  if (answered) return;
+  answered = true;
+  const item = QUESTIONS[currentQ];
+  const allBtns = document.querySelectorAll('#q-options .option');
+  allBtns.forEach(b => b.classList.add('disabled'));
+
+  if (idx === item.correct) {
+    score++;
+    btnEl.classList.add('correct');
+  } else {
+    btnEl.classList.add('wrong');
+    allBtns[item.correct].classList.add('correct');
+  }
+  document.getElementById('q-score').textContent = `Score: ${score}`;
+
+  setTimeout(() => {
+    currentQ++;
+    if (currentQ < QUESTIONS.length) {
+      renderQuestion();
+    } else {
+      showResult();
+    }
+  }, 900);
+}
+
+function showResult() {
+  screenQuiz.classList.add('hidden');
+  screenResult.classList.remove('hidden');
+  document.getElementById('progress-fill').style.width = '100%';
+  const total = QUESTIONS.length;
+  document.getElementById('final-score').textContent = `${score} / ${total}`;
+  let label;
+  const pct = score / total;
+  if (pct === 1) label = "Perfect score — nursing degree optional.";
+  else if (pct >= 0.8) label = "Seriously well prepared.";
+  else if (pct >= 0.5) label = "Solid effort — worth a top-up later.";
+  else label = "Room to learn before the due date.";
+  document.getElementById('final-label').textContent = label;
+}
+
+document.getElementById('retry-btn').addEventListener('click', () => {
+  screenResult.classList.add('hidden');
+  screenStart.classList.remove('hidden');
+});
+</script>
+
+</body>
+</html>
