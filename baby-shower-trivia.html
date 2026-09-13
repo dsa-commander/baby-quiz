@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en" id="html-root">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Baby Shower Trivia</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --navy: #1B2A4A;
+    --navy-deep: #121E38;
+    --cream: #F7F1E3;
+    --gold: #E0A93D;
+    --gold-dim: #B7872E;
+    --sage: #93A97E;
+    --coral: #D9705F;
+    --ink: #1B2A4A;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--navy-deep);
+    background-image:
+      radial-gradient(circle at 20% 15%, rgba(224,169,61,0.10) 0%, transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(147,169,126,0.10) 0%, transparent 45%);
+    font-family: 'Inter', sans-serif;
+    color: var(--cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 460px;
+    background: var(--cream);
+    color: var(--ink);
+    border-radius: 18px;
+    padding: 32px 26px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: repeating-linear-gradient(90deg, var(--gold) 0 18px, var(--sage) 18px 36px, var(--coral) 36px 54px);
+  }
+
+  .lang-toggle {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 6px;
+    z-index: 2;
+  }
+  .lang-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 2px solid #DCD3BC;
+    background: #FFFDF8;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .lang-btn.active {
+    background: var(--navy);
+    color: var(--cream);
+    border-color: var(--navy);
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 30px;
+    line-height: 1.15;
+    margin: 10px 0 6px;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    color: #55618A;
+    margin-bottom: 26px;
+    line-height: 1.5;
+  }
+
+  input[type=text] {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 2px solid #DCD3BC;
+    font-size: 16px;
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 16px;
+    background: #FFFDF8;
+  }
+  input[type=text]:focus { outline: none; border-color: var(--gold-dim); }
+
+  button.primary {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    background: var(--navy);
+    color: var(--cream);
+    font-size: 16px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.15s ease;
+  }
+  button.primary:active { transform: scale(0.98); }
+  button.primary:disabled { opacity: 0.4; cursor: default; }
+
+  .progress-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #55618A;
+    margin-bottom: 18px;
+  }
+
+  .progress-bar {
+    height: 6px;
+    background: #E9E1CC;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--gold);
+    transition: width 0.25s ease;
+  }
+
+  .question {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 21px;
+    line-height: 1.35;
+    margin-bottom: 20px;
+  }
+
+  .options { display: flex; flex-direction: column; gap: 10px; }
+
+  .option {
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 2px solid #DCD3BC;
+    background: #FFFDF8;
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .option:active { transform: scale(0.99); }
+  .option.correct { border-color: var(--sage); background: #EAF0E3; }
+  .option.wrong { border-color: var(--coral); background: #F7E5E1; }
+  .option.disabled { pointer-events: none; }
+
+  .result-score {
+    font-family: 'Fraunces', serif;
+    font-size: 56px;
+    font-weight: 700;
+    text-align: center;
+    margin: 6px 0 4px;
+    color: var(--navy);
+  }
+  .result-label {
+    text-align: center;
+    color: #55618A;
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
+  .leaderboard {
+    margin-top: 22px;
+    border-top: 1px solid #E9E1CC;
+    padding-top: 18px;
+  }
+  .leaderboard h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    margin: 0 0 12px;
+  }
+  .lb-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 9px 0;
+    font-size: 14px;
+    border-bottom: 1px solid #F0EADA;
+  }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-name { font-weight: 600; }
+  .lb-score { color: var(--gold-dim); font-weight: 600; }
+  .lb-you { color: var(--sage); font-size: 12px; margin-left: 6px; }
+
+  .hidden { display: none; }
+
+  .loading-note { text-align: center; font-size: 13px; color: #55618A; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <div class="lang-toggle">
+    <button class="lang-btn active" id="lang-en" type="button">EN</button>
+    <button class="lang-btn" id="lang-de" type="button">DE</button>
+  </div>
+
+  <!-- SCREEN: Start -->
+  <div id="screen-start">
+    <h1 id="t-title"></h1>
+    <p class="subtitle" id="t-subtitle"></p>
+    <input type="text" id="name-input" maxlength="24" autocomplete="off">
+    <button class="primary" id="start-btn"></button>
+    <div class="leaderboard">
+      <h2 id="t-leaderboard-so-far"></h2>
+      <div id="start-leaderboard"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: Quiz -->
+  <div id="screen-quiz" class="hidden">
+    <div class="progress-row">
+      <span id="q-counter"></span>
+      <span id="q-score"></span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="question" id="q-text"></div>
+    <div class="options" id="q-options"></div>
+  </div>
+
+  <!-- SCREEN: Result -->
+  <div id="screen-result" class="hidden">
+    <h1 style="text-align:center;" id="t-nice-work"></h1>
+    <div class="result-score" id="final-score">0 / 20</div>
+    <div class="result-label" id="final-label"></div>
+    <button class="primary" id="retry-btn"></button>
+    <div class="leaderboard">
+      <h2 id="t-leaderboard"></h2>
+      <div id="final-leaderboard"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAnjQ_hlcTDIu0o7154SJm_MqMrPOsbhcQ",
+  authDomain: "baby-quiz-661d0.firebaseapp.com",
+  databaseURL: "https://baby-quiz-661d0-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "baby-quiz-661d0",
+  storageBucket: "baby-quiz-661d0.firebasestorage.app",
+  messagingSenderId: "102494392470",
+  appId: "1:102494392470:web:36341f3394c9993bf1b2b7"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const UI = {
+  en: {
+    title: "Baby Shower Trivia",
+    subtitle: "20 quick questions about pregnancy, newborns and baby facts. Enter your name and play on your own phone \u2014 everyone's score lands on the shared leaderboard below.",
+    namePlaceholder: "Your name",
+    startBtn: "Start quiz",
+    leaderboardSoFar: "Leaderboard so far",
+    loading: "Loading\u2026",
+    questionOf: (n, total) => `Question ${n} of ${total}`,
+    score: (s) => `Score: ${s}`,
+    niceWork: "Nice work!",
+    playAgain: "Play again",
+    leaderboard: "Leaderboard",
+    noScores: "No scores yet \u2014 be the first!",
+    you: "(you)",
+    labels: {
+      perfect: "Perfect score \u2014 nursing degree optional.",
+      great: "Seriously well prepared.",
+      solid: "Solid effort \u2014 worth a top-up later.",
+      room: "Room to learn before the due date."
+    }
+  },
+  de: {
+    title: "Babyparty-Quiz",
+    subtitle: "20 kurze Fragen rund um Schwangerschaft, Neugeborene und Babywissen. Gib deinen Namen ein und spiele auf deinem eigenen Handy \u2013 alle Ergebnisse landen unten in der gemeinsamen Bestenliste.",
+    namePlaceholder: "Dein Name",
+    startBtn: "Quiz starten",
+    leaderboardSoFar: "Bisherige Bestenliste",
+    loading: "L\u00e4dt\u2026",
+    questionOf: (n, total) => `Frage ${n} von ${total}`,
+    score: (s) => `Punkte: ${s}`,
+    niceWork: "Gut gemacht!",
+    playAgain: "Nochmal spielen",
+    leaderboard: "Bestenliste",
+    noScores: "Noch keine Ergebnisse \u2014 sei der Erste!",
+    you: "(du)",
+    labels: {
+      perfect: "Volle Punktzahl \u2013 Hebammenausbildung optional.",
+      great: "Wirklich gut vorbereitet.",
+      solid: "Solide Leistung \u2013 ein bisschen nachlesen schadet nicht.",
+      room: "Vor dem Geburtstermin gibt's noch was zu lernen."
+    }
+  }
+};
+
+const QUESTIONS = [
+  { correct: 1,
+    en: { q: "About how many bones does a newborn baby have, compared with an adult's 206?", options: ["Around 150", "Around 300", "Around 206, same as adults", "Around 450"] },
+    de: { q: "Wie viele Knochen hat ein Neugeborenes ungef\u00e4hr, verglichen mit den 206 eines Erwachsenen?", options: ["Etwa 150", "Etwa 300", "Etwa 206, genauso wie Erwachsene", "Etwa 450"] } },
+  { correct: 2,
+    en: { q: "What's the average weight of a full-term newborn?", options: ["About 3 lbs (1.4 kg)", "About 5 lbs (2.3 kg)", "About 7.5 lbs (3.4 kg)", "About 11 lbs (5 kg)"] },
+    de: { q: "Wie viel wiegt ein reifgeborenes Baby im Durchschnitt?", options: ["Etwa 1,4 kg", "Etwa 2,3 kg", "Etwa 3,4 kg", "Etwa 5 kg"] } },
+  { correct: 0,
+    en: { q: "What is the soft spot on a baby's head called?", options: ["Fontanelle", "Cranium gap", "Sutura", "Ossicle"] },
+    de: { q: "Wie nennt man die weiche Stelle am Kopf eines Babys?", options: ["Fontanelle", "Sch\u00e4delspalt", "Sutura", "Ossikel"] } },
+  { correct: 2,
+    en: { q: "How long does a typical human pregnancy last, counted from the last period?", options: ["32 weeks", "36 weeks", "40 weeks", "44 weeks"] },
+    de: { q: "Wie lange dauert eine typische Schwangerschaft, gerechnet ab dem letzten Regelbeginn?", options: ["32 Wochen", "36 Wochen", "40 Wochen", "44 Wochen"] } },
+  { correct: 1,
+    en: { q: "What's the medical name for a newborn's first, tar-like stool?", options: ["Colostrum", "Meconium", "Lanugo", "Vernix"] },
+    de: { q: "Wie hei\u00dft der erste, teerartige Stuhlgang eines Neugeborenen medizinisch?", options: ["Kolostrum", "Mekonium", "Lanugo", "Vernix"] } },
+  { correct: 2,
+    en: { q: "Around what age do most babies start crawling?", options: ["1\u20132 months", "3\u20134 months", "6\u201310 months", "14\u201316 months"] },
+    de: { q: "In welchem Alter beginnen die meisten Babys zu krabbeln?", options: ["1\u20132 Monate", "3\u20134 Monate", "6\u201310 Monate", "14\u201316 Monate"] } },
+  { correct: 1,
+    en: { q: "How many teeth make up a full set of baby (milk) teeth?", options: ["16", "20", "24", "32"] },
+    de: { q: "Aus wie vielen Z\u00e4hnen besteht ein vollst\u00e4ndiges Milchgebiss?", options: ["16", "20", "24", "32"] } },
+  { correct: 2,
+    en: { q: "Roughly how many hours a day does a newborn typically sleep?", options: ["8\u20139 hours", "12\u201313 hours", "16\u201317 hours", "20\u201322 hours"] },
+    de: { q: "Wie viele Stunden am Tag schl\u00e4ft ein Neugeborenes normalerweise ungef\u00e4hr?", options: ["8\u20139 Stunden", "12\u201313 Stunden", "16\u201317 Stunden", "20\u201322 Stunden"] } },
+  { correct: 0,
+    en: { q: "What's the fine, downy hair sometimes found on a newborn's skin called?", options: ["Lanugo", "Vernix", "Fontanelle", "Follicle"] },
+    de: { q: "Wie hei\u00dft der feine Flaum, der manchmal auf der Haut von Neugeborenen zu finden ist?", options: ["Lanugo", "Vernix", "Fontanelle", "Follikel"] } },
+  { correct: 2,
+    en: { q: "Around what age do most babies say their first word?", options: ["3\u20134 months", "6\u20137 months", "About 12 months", "About 24 months"] },
+    de: { q: "In welchem Alter sagen die meisten Babys ihr erstes Wort?", options: ["3\u20134 Monate", "6\u20137 Monate", "Etwa 12 Monate", "Etwa 24 Monate"] } },
+  { correct: 1,
+    en: { q: "By around what age do most babies double their birth weight?", options: ["1 month", "5\u20136 months", "12 months", "18 months"] },
+    de: { q: "Bis zu welchem Alter verdoppeln die meisten Babys ihr Geburtsgewicht?", options: ["1 Monat", "5\u20136 Monate", "12 Monate", "18 Monate"] } },
+  { correct: 1,
+    en: { q: "What term describes distress when a baby is separated from a parent, common from around 8 months?", options: ["Colic", "Separation anxiety", "Reflux", "Sensory overload"] },
+    de: { q: "Wie nennt man die Angst, die Babys ab etwa 8 Monaten empfinden, wenn sie von einem Elternteil getrennt werden?", options: ["Koliken", "Trennungsangst", "Reflux", "Reiz\u00fcberflutung"] } },
+  { correct: 0,
+    en: { q: "What is the waxy coating that protects a newborn's skin in the womb called?", options: ["Vernix", "Lanugo", "Amniotic film", "Meconium"] },
+    de: { q: "Wie hei\u00dft die wachsartige Schutzschicht auf der Haut eines Neugeborenen im Mutterleib?", options: ["Vernix", "Lanugo", "Fruchtwasserfilm", "Mekonium"] } },
+  { correct: 1,
+    en: { q: "About how far can a newborn baby focus their eyes?", options: ["Across a room", "8\u201312 inches (face distance)", "Only bright lights, no shapes", "Full adult vision range"] },
+    de: { q: "Wie weit kann ein Neugeborenes ungef\u00e4hr scharf sehen?", options: ["Quer durch den Raum", "20\u201330 cm (Gesichtsabstand)", "Nur helles Licht, keine Formen", "Volle Sehsch\u00e4rfe wie ein Erwachsener"] } },
+  { correct: 1,
+    en: { q: "What's a common medical term for a baby born after 42 weeks of pregnancy?", options: ["Premature", "Post-term", "Low birth weight", "Breech"] },
+    de: { q: "Wie nennt man medizinisch ein Baby, das nach der 42. Schwangerschaftswoche geboren wird?", options: ["Fr\u00fchgeboren", "\u00dcbertragen", "Untergewichtig", "Stei\u00dflage"] } },
+  { correct: 2,
+    en: { q: "Roughly how many diapers does a newborn go through per day?", options: ["2\u20133", "5\u20136", "8\u201310", "15\u201318"] },
+    de: { q: "Wie viele Windeln braucht ein Neugeborenes ungef\u00e4hr pro Tag?", options: ["2\u20133", "5\u20136", "8\u201310", "15\u201318"] } },
+  { correct: 1,
+    en: { q: "What is the umbilical cord stump on a newborn's belly button usually gone by?", options: ["A few hours", "1\u20133 weeks", "6 months", "1 year"] },
+    de: { q: "Nach wie viel Zeit f\u00e4llt der Nabelschnurrest bei einem Neugeborenen normalerweise ab?", options: ["Ein paar Stunden", "1\u20133 Wochen", "6 Monate", "1 Jahr"] } },
+  { correct: 2,
+    en: { q: "What's a typical resting heart rate range for a healthy newborn?", options: ["40\u201360 bpm", "70\u201390 bpm", "120\u2013160 bpm", "180\u2013220 bpm"] },
+    de: { q: "Wie hoch ist der typische Ruhepuls eines gesunden Neugeborenen?", options: ["40\u201360 Schl\u00e4ge/Min", "70\u201390 Schl\u00e4ge/Min", "120\u2013160 Schl\u00e4ge/Min", "180\u2013220 Schl\u00e4ge/Min"] } },
+  { correct: 1,
+    en: { q: "What is the pregnancy craving-and-nausea period commonly called?", options: ["Baby blues", "Morning sickness", "Braxton Hicks", "Colostrum phase"] },
+    de: { q: "Wie nennt man die \u00dcbelkeit und Hei\u00dfhungerattacken zu Beginn der Schwangerschaft umgangssprachlich?", options: ["Baby-Blues", "Morgen\u00fcbelkeit", "Braxton-Hicks-Kontraktionen", "Kolostrumphase"] } },
+  { correct: 0,
+    en: { q: "What are the mild, often painless practice contractions some call 'false labor'?", options: ["Braxton Hicks contractions", "Lanugo contractions", "Meconium contractions", "Transition contractions"] },
+    de: { q: "Wie nennt man die milden, meist schmerzlosen \u00dcbungswehen, die manche 'falsche Wehen' nennen?", options: ["Braxton-Hicks-Kontraktionen", "Lanugo-Kontraktionen", "Mekonium-Kontraktionen", "\u00dcbergangswehen"] } }
+];
+
+let lang = 'en';
+let currentQ = 0;
+let score = 0;
+let playerName = "";
+let answered = false;
+
+const screenStart = document.getElementById('screen-start');
+const screenQuiz = document.getElementById('screen-quiz');
+const screenResult = document.getElementById('screen-result');
+
+function t() { return UI[lang]; }
+
+function applyStaticText() {
+  const u = t();
+  document.getElementById('html-root').lang = lang;
+  document.getElementById('t-title').textContent = u.title;
+  document.getElementById('t-subtitle').textContent = u.subtitle;
+  document.getElementById('name-input').placeholder = u.namePlaceholder;
+  document.getElementById('start-btn').textContent = u.startBtn;
+  document.getElementById('t-leaderboard-so-far').textContent = u.leaderboardSoFar;
+  document.getElementById('t-nice-work').textContent = u.niceWork;
+  document.getElementById('retry-btn').textContent = u.playAgain;
+  document.getElementById('t-leaderboard').textContent = u.leaderboard;
+  if (!screenQuiz.classList.contains('hidden')) {
+    renderQuestion();
+  }
+}
+
+function setLang(newLang) {
+  lang = newLang;
+  document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+  document.getElementById('lang-de').classList.toggle('active', lang === 'de');
+  applyStaticText();
+  refreshLeaderboards();
+}
+
+document.getElementById('lang-en').addEventListener('click', () => setLang('en'));
+document.getElementById('lang-de').addEventListener('click', () => setLang('de'));
+
+document.getElementById('start-btn').addEventListener('click', () => {
+  const val = document.getElementById('name-input').value.trim();
+  playerName = val || (lang === 'de' ? "Gast" : "Guest");
+  currentQ = 0;
+  score = 0;
+  screenStart.classList.add('hidden');
+  screenQuiz.classList.remove('hidden');
+  renderQuestion();
+});
+
+function renderQuestion() {
+  answered = false;
+  const total = QUESTIONS.length;
+  const item = QUESTIONS[currentQ][lang];
+  document.getElementById('q-counter').textContent = t().questionOf(currentQ + 1, total);
+  document.getElementById('q-score').textContent = t().score(score);
+  document.getElementById('progress-fill').style.width = `${(currentQ / total) * 100}%`;
+  document.getElementById('q-text').textContent = item.q;
+
+  const optionsEl = document.getElementById('q-options');
+  optionsEl.innerHTML = '';
+  item.options.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => selectAnswer(idx, btn));
+    optionsEl.appendChild(btn);
+  });
+}
+
+function selectAnswer(idx, btnEl) {
+  if (answered) return;
+  answered = true;
+  const correctIdx = QUESTIONS[currentQ].correct;
+  const allBtns = document.querySelectorAll('#q-options .option');
+  allBtns.forEach(b => b.classList.add('disabled'));
+
+  if (idx === correctIdx) {
+    score++;
+    btnEl.classList.add('correct');
+  } else {
+    btnEl.classList.add('wrong');
+    allBtns[correctIdx].classList.add('correct');
+  }
+  document.getElementById('q-score').textContent = t().score(score);
+
+  setTimeout(() => {
+    currentQ++;
+    if (currentQ < QUESTIONS.length) {
+      renderQuestion();
+    } else {
+      showResult();
+    }
+  }, 900);
+}
+
+function showResult() {
+  screenQuiz.classList.add('hidden');
+  screenResult.classList.remove('hidden');
+  document.getElementById('progress-fill').style.width = '100%';
+  const total = QUESTIONS.length;
+  document.getElementById('final-score').textContent = `${score} / ${total}`;
+  const pct = score / total;
+  const labels = t().labels;
+  let label;
+  if (pct === 1) label = labels.perfect;
+  else if (pct >= 0.8) label = labels.great;
+  else if (pct >= 0.5) label = labels.solid;
+  else label = labels.room;
+  document.getElementById('final-label').textContent = label;
+  saveScore();
+}
+
+function saveScore() {
+  try {
+    db.ref('scores').push({ name: playerName, score, total: QUESTIONS.length, ts: Date.now() });
+  } catch (err) {
+    console.error('Could not save score', err);
+  }
+}
+
+document.getElementById('retry-btn').addEventListener('click', () => {
+  screenResult.classList.add('hidden');
+  screenStart.classList.remove('hidden');
+});
+
+let latestEntries = [];
+
+function renderLeaderboard(entries, targetId) {
+  const el = document.getElementById(targetId);
+  if (!entries.length) {
+    el.innerHTML = `<div class="loading-note">${t().noScores}</div>`;
+    return;
+  }
+  el.innerHTML = entries.slice(0, 10).map(en => `
+    <div class="lb-row">
+      <span class="lb-name">${escapeHtml(en.name)}${en.name === playerName ? `<span class="lb-you">${t().you}</span>` : ''}</span>
+      <span class="lb-score">${en.score} / ${en.total}</span>
+    </div>
+  `).join('');
+}
+
+function refreshLeaderboards() {
+  renderLeaderboard(latestEntries, 'start-leaderboard');
+  renderLeaderboard(latestEntries, 'final-leaderboard');
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+document.getElementById('start-leaderboard').innerHTML = `<div class="loading-note">${t().loading}</div>`;
+document.getElementById('final-leaderboard').innerHTML = `<div class="loading-note">${t().loading}</div>`;
+
+try {
+  db.ref('scores').on('value', snap => {
+    const entries = [];
+    snap.forEach(child => { entries.push(child.val()); return false; });
+    entries.sort((a, b) => b.score - a.score || a.ts - b.ts);
+    latestEntries = entries;
+    refreshLeaderboards();
+  });
+} catch (err) {
+  console.error('Leaderboard unavailable', err);
+}
+
+applyStaticText();
+</script>
+
+</body>
+</html>
